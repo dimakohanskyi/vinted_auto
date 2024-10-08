@@ -1,0 +1,20 @@
+import requests
+
+base_url = 'http://localhost:3001/v1.0/auth/login-with-token'
+access_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNjkwOGM4Y2UzYzJkNDU0NmQ1NzQxNTE3ZTdlMWNkMTk4NmJjMTViZDAyZTQxYzAzMGRkODlhZjA2YTRiYmVkNDA2NjlhNjNjOTAyNTA2Y2IiLCJpYXQiOjE3Mjg0MDQ5MDYuNTY5MTQyLCJuYmYiOjE3Mjg0MDQ5MDYuNTY5MTQ0LCJleHAiOjE3MzYxODA5MDYuNTU4NzA0LCJzdWIiOiIzNzkyMTY1Iiwic2NvcGVzIjpbXX0.GWVNK_1g3eM2yl9L4aI5I7oVLWA7Zvi1cHEJwdTDHeercVyQ0jA6SGLs9-0fWt4nqZPust3e77KRcOgM6Rcoj-Y1crlWF-7sS6sn_nh9blF42EWVyurNNvaVhtklVdkjXN8LogO0VYKN3yvkGZLqidxIPgVz3Zit96xAqBwOgpefv3i5TIWsuviczpVMsp1GUTNpLHtSnAD08_Ilo0WnIHEU8okl2zyH2BkaCx2s69yrDRl5v1Gl4Zi6LcpcZEJUPPprlaclooJ0heOuILc7sJsE6tIJBqhHLDi241xfMX5pWR_0iQHoLmsRHMh8dWUn1WxTtlIwvRa8mRMcxpVkMrGNr4MPqzz-53kZuxR26R1-zVnbExkzgl1B3boffnDK2j4_7ydaPDw5HaCy90NGFlxS6u17pgDChFOgMd9BRPdPI7gZKyEnpNTY_qA88IJ8LeX4XR97EgUrjXqH6rszk84C97UNiNBP7wFLuA7XW3qI7-4njlef3uQe0sHiyJAOF0qFdkrjFsq2ANL2ENQiSx2eTQu04QOnxoFqSnVUCV9GFh9OXpuiqh32BzjGg2tKZ-gbp4uEOgnR80XtpJBZtG8UDr20Du_sUuOTgvG2pnM1L963ra_tZfzypQWEK038wnmAlgSGR-pZIRnEJtXznIB2wWg3I8AVaYHx_wvoDmE'
+
+request_data = {
+    'token': access_token
+}
+
+headers = {
+    'Content-Type': 'application/json'
+}
+
+responce = requests.post(base_url, json=request_data, headers=headers)
+
+if responce.status_code == 200:
+    print(responce.json())
+else:
+    print('Error', responce.status_code)
+
