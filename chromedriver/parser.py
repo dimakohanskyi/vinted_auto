@@ -30,8 +30,9 @@ def parsing_products_data(url):
     driver = webdriver.Chrome()
     driver.get(url)
 
-    time.sleep(10)
+    time.sleep(5)
 
+    #Close first modal window
     try:
         modal_close_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, '/html/body/div[4]/div/div/div/div[1]/div/div[3]/button'))
@@ -43,6 +44,7 @@ def parsing_products_data(url):
 
     time.sleep(2)
 
+    #Close first modal window
     try:
         second_modal_btn = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, '//*[@id="onetrust-accept-btn-handler"]'))
@@ -54,8 +56,10 @@ def parsing_products_data(url):
 
     time.sleep(2)
 
+    # get parent block
     product_blocks = driver.find_elements(By.CLASS_NAME, 'feed-grid__item')
 
+    #range for each product
     for index in range(len(product_blocks)):
         product_link = product_blocks[index].find_element(By.TAG_NAME, 'a')
         product_link.click()
