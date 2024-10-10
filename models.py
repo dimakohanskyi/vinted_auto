@@ -43,7 +43,9 @@ class Products(Base):
     location = Column(String, index=True)
     payment_method = Column(String, index=True)
     description = Column(String, index=True)
-    
+    category = Column(String, index=True)
+
+
 
 
 
