@@ -35,13 +35,14 @@ class Product(Base):
     title = Column(String, index=True)
     price = Column(String, index=True)
     company = Column(String, index=True)
-    size = Column(Integer, index=True)
+    size = Column(String, index=True)
     condition = Column(String, index=True)
     color = Column(String, index=True)
     location = Column(String, index=True)
     payment_method = Column(String, index=True)
     description = Column(String, index=True)
     category = Column(String, index=True)
+    unique_identifier = Column(String, index=True)
 
     images = relationship("ProductImage", back_populates="product")
     user = relationship("User", back_populates="products")
@@ -62,6 +63,6 @@ class ProductImage(Base):
     def __repr__(self):
         return f"<ProductImage(id={self.id}, product_id={self.product_id}, image_path={self.image_path})>"
 
-# #
+# # #
 # Base.metadata.drop_all(bind=engine)
 # Base.metadata.create_all(engine)

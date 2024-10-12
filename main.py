@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 from models import User, SessionLocal
+from tkinter import PhotoImage
 
 
 
@@ -10,6 +11,10 @@ root = tk.Tk()
 root.title("Парсер Лисого")
 root.geometry("1200x600")
 notebook = ttk.Notebook(root)
+
+background_image = PhotoImage(file="user/back1_bv.gif")
+
+
 
 
 #First Tab
@@ -37,6 +42,9 @@ def parsing_on_button_click():
 
 tab1 = ttk.Frame(notebook)
 notebook.add(tab1, text="Parser")
+
+background_label = tk.Label(tab1, image=background_image)
+background_label.place(x=0, y=40, relwidth=1, relheight=1)
 
 label = tk.Label(tab1, text="Введіть URL:")
 label.pack(pady=10)
@@ -102,8 +110,6 @@ button_create_user = tk.Button(tab2, text="Create", command=add_new_user)
 button_create_user.pack(pady=20)
 
 notebook.pack(expand=True, fill='both')
-
-
 
 
 #Third Tab
