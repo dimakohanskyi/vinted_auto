@@ -7,10 +7,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 import os
 from models import Product, SessionLocal, User, ProductImage
-
-basic_url = 'https://www.vinted.pl/member/228609071'
 
 
 def download_image(url, file_path):
@@ -39,25 +38,80 @@ def close_modals(driver, xpath):
     time.sleep(1)
 
 
+def random_scroll(driver, pause_time=2, max_scrolls=50):
+
+    """ Скролимо сторінку вниз до самого низу, поки не перестануть підвантажуватись нові елементи """
+    last_height = driver.execute_script("return document.body.scrollHeight")
+
+    scroll_count = 0
+    while scroll_count < max_scrolls:  # Ліміт на кількість скролінгів
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(pause_time)
+        new_height = driver.execute_script("return document.body.scrollHeight")
+
+        if new_height == last_height:
+            print("Reached the bottom of the page, no more elements to load.")
+            break
+
+        last_height = new_height
+        scroll_count += 1
+
+
+def collect_product_links(driver):
+    """ Збираємо всі лінки на товари зі сторінки після скролінгу """
+    product_links = set()
+
+    try:
+        product_blocks = WebDriverWait(driver, 10).until(
+            EC.presence_of_all_elements_located((By.CLASS_NAME, 'feed-grid__item'))
+        )
+
+        for product_block in product_blocks:
+            try:
+                product_link_element = product_block.find_element(By.TAG_NAME, 'a')
+                product_link = product_link_element.get_attribute('href')
+
+                if product_link not in product_links:
+                    product_links.add(product_link)
+
+            except StaleElementReferenceException:
+                print("Stale element detected, skipping this element.")
+                continue
+
+    except TimeoutException:
+        print("Timeout while waiting for product elements.")
+
+    return product_links
+
+
+def generator_uniq_images_names(title, price, size):
+    number = random.randint(100, 999)
+    db_uniq_image_name = f"{title}_{size}_{price}_{number}.jpg"
+
+    return db_uniq_image_name
+
+
 def parsing_products_data(url):
     driver = webdriver.Chrome()
+    driver.maximize_window()
     driver.get(url)
-    time.sleep(5)
+    time.sleep(3)
 
-    close_modals(driver, '/html/body/div[4]/div/div/div/div[1]/div/div[3]/button')
-    close_modals(driver, '//*[@id="onetrust-accept-btn-handler"]')
+    try:
+        close_modals(driver, '/html/body/div[4]/div/div/div/div[1]/div/div[3]/button')
+        close_modals(driver, '//*[@id="onetrust-accept-btn-handler"]')
+    except Exception as e:
+        print("No modals to close or failed to close modal:", e)
 
-    time.sleep(1)
-    product_blocks = driver.find_elements(By.CLASS_NAME, 'feed-grid__item')
-    product_counter = 0
+    random_scroll(driver)
+    product_links = collect_product_links(driver)
+    print(f"Collected {len(product_links)} product links.")
 
-    for index in range(len(product_blocks)):
+    for product_link in product_links:
+        driver.get(product_link)  # Відкриваємо сторінку товару
+        time.sleep(3)
+
         try:
-            random_scroll(driver)
-            product_link = product_blocks[index].find_element(By.TAG_NAME, 'a')
-            product_link.click()
-            time.sleep(3)
-
             dirt_product_price = driver.find_element(By.CSS_SELECTOR, '[data-testid="item-price"] p').text
             product_price = dirt_product_price.replace('zł', '').strip()
 
@@ -109,11 +163,13 @@ def parsing_products_data(url):
             if product_cat_elements:
                 product_cat_value = product_cat_elements[-1].text.strip()
 
-            product_images_elements = driver.find_elements(By.CSS_SELECTOR, 'img[data-testid="item-photo-1--img"]')
 
-            # product_directory = "product_import"
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            product_directory = os.path.join("product_import", product_title_value.replace(" ", "_") + timestamp)
+
+            image_urls = []
+            names_images_db = []
+
+            product_directory = os.path.join("product_import",
+                                             product_title_value.replace(" ", "_") + product_price + size_value)
 
             if not os.path.exists(product_directory):
                 os.mkdir(product_directory)
@@ -121,141 +177,51 @@ def parsing_products_data(url):
             else:
                 print(f"Directory '{product_directory}' already exists.")
 
-            local_path_images_list = []
-            for img_elm in product_images_elements:
-                img_elm.click()
-                time.sleep(5)
-
-                #html images elements
-                first_product_images_block = driver.find_elements(By.CSS_SELECTOR,
-                                                                  'img[data-testid="image-carousel-image-shown"]')
-
-                for first_product_images_value in first_product_images_block:
-                    first_product_images_value = first_product_images_value.get_attribute('src')
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    file_name = f"{product_title_value}_{timestamp}_rest.jpg"
-                    image_path = os.path.abspath(file_name)
-                    local_path_images_list.append(image_path)
-                    file_path = os.path.join(product_directory, file_name)
-
-                    download_image(first_product_images_value, file_path)
-                    time.sleep(2)
-
-                rest_images_block = driver.find_elements(By.CSS_SELECTOR, 'img[data-testid="image-carousel-image"]')
-
-                for rest_images_values in rest_images_block:
-                    rest_images_values = rest_images_values.get_attribute('src')
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    file_name = f"{product_title_value}_{timestamp}_rest.jpg"
-                    image_path = os.path.abspath(file_name)
-                    local_path_images_list.append(image_path)
-                    file_path = os.path.join(product_directory, file_name)
-
-                    download_image(rest_images_values, file_path)
-                    time.sleep(2)
-
             try:
-                add_data_db(
-                    title=product_title_value,
-                    price=product_price,
-                    company=product_company,
-                    size=size_value,
-                    condition=product_condition_value,
-                    color=product_color_value,
-                    location=product_location_values,
-                    payment_method=product_payment_method_value,
-                    description=product_desc_values,
-                    category=product_cat_value,
-                    image_path=local_path_images_list,
+                WebDriverWait(driver, 10).until(
+                    EC.visibility_of_element_located((By.CLASS_NAME, "item-photos"))
                 )
 
-                local_path_images_list.clear()
+                thumbnails = driver.find_elements(By.CSS_SELECTOR, "div[data-testid='item-photo-1']")
+                for first_img_site in thumbnails:
+                    first_img_site.click()
+                    time.sleep(2)
 
-                product_counter += 1
-                if product_counter % 5 == 0:
-                    random_scroll(driver)
+                WebDriverWait(driver, 10).until(
+                    EC.visibility_of_element_located((By.CLASS_NAME, "image-carousel__image"))
+                )
 
-                time.sleep(2)
+                carousel_images = driver.find_elements(By.CLASS_NAME, "image-carousel__image")
+                for img in carousel_images:
+                    img_url = img.get_attribute("src")
+                    image_urls.append(img_url)
 
-            except Exception as ex:
-                print(ex)
 
-            time.sleep(2)
+                for url_el in image_urls:
+                    file_name = generator_uniq_images_names(title=product_title_value, price=product_price,
+                                                            size=size_value)
+
+                    file_path = os.path.join(product_directory, file_name)
+
+                    # Викликаємо download_image з URL
+                    download_image(url_el, file_path)
+
+                    names_images_db.append(file_path)
+                    print(f"Downloaded image: {file_path}")
+                    time.sleep(1)
+
+
+                close_button = driver.find_element(By.CLASS_NAME, "image-carousel__button--close")
+                close_button.click()
+                time.sleep(1)
+
+            except Exception as es:
+                print("An error occurred:", es)
+
         except Exception as ex:
             print(ex)
 
-        finally:
-            driver.back()
-            time.sleep(5)
-            product_blocks = driver.find_elements(By.CLASS_NAME, 'feed-grid__item')
-
     driver.quit()
-    return None
-
-
-def add_data_db(title, price, company, size, condition, color, location, payment_method, description, category,
-                image_path):
-
-    session = SessionLocal()
-    unique_identifier = f"{title}_{price}_{company}".lower()
-
-    try:
-        existing_product = session.query(Product).filter(Product.unique_identifier == unique_identifier).first()
-
-        if existing_product:
-            print(f"Product '{title}' already exists in the database. Skipping.")
-
-            for image in image_path:
-                new_image = ProductImage(
-                    product_id=existing_product.id,
-                    image_path=image,
-                )
-                session.add(new_image)
-
-        else:
-            new_product = Product(
-                title=title,
-                price=price,
-                company=company,
-                size=size,
-                condition=condition,
-                color=color,
-                location=location,
-                payment_method=payment_method,
-                description=description,
-                category=category,
-                unique_identifier=unique_identifier
-            )
-
-            session.add(new_product)
-
-            for image in image_path:
-                new_image = ProductImage(
-                    product_id=new_product.id,
-                    image_path=image,
-                )
-                session.add(new_image)
-
-            session.commit()
-
-            print(f"Product '{title}' and its images have been updated in the database.")
-
-            session.commit()
-            print(f"Product '{title}' added to database.")
-
-    except Exception as e:
-        session.rollback()
-        print(f"Error adding product: {e}")
-
-    finally:
-        session.close()
-
-
-def random_scroll(driver):
-
-    driver.execute_script("window.scrollTo(100, document.body.scrollHeight);")
-    time.sleep(random.uniform(1, 3))
-
 
 
 
