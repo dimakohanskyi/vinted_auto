@@ -2,7 +2,7 @@ from parser_driver.parser import download_image, parsing_products_data
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
-from models import User, SessionLocal
+from models import User, SessionLocal, Product, ProductImage
 from tkinter import PhotoImage
 
 
@@ -12,38 +12,62 @@ root.title("Парсер Лисого")
 root.geometry("1200x600")
 notebook = ttk.Notebook(root)
 
-background_image = PhotoImage(file="user/back1_bv.gif")
-
-
-
 
 #First Tab
 def parsing_on_button_click():
+    session = SessionLocal()
     user_input = entry.get()
+    user = session.query(User).filter(User.account_url == user_input).first()
+
     if not user_input:
         messagebox.showwarning("Увага", "Будь ласка, введіть URL!")
         return
 
-    try:
-        session = SessionLocal()
-        user_url = session.query(User).filter(User.account_url == user_input).first()
-        if user_url:
-            label.config(text=f"Start parsing data from: {user_input}")
-            parsing_products_data(user_input)
-            print('done')
-        else:
-            label.config(text=f"User with url: {user_input} doesn't exist")
-            print('pezda')
+    if not user:
+        label.config(text=f"User with URL: {user_input} doesn't exist")
+        return
 
-    except Exception as e:
-        label.config(text="Сталася помилка під час парсингу.")
-        print(f"Error: {e}")
+    # try:
+        products_to_delete = session.query(Product).filter(Product.user_id == user.id).all()
+
+        for product in products_to_delete:
+            print(product)
+        #     # Видаляємо всі зображення продукту
+        #     session.query(ProductImage).filter(ProductImage.product_id == product.id).delete()
+        #
+        #     # Тепер видаляємо самі продукти
+        #     session.query(Product).filter(Product.user_id == user.id).delete()
+        #
+        #     session.commit()  # Застосовуємо зміни в базі даних
+        #     print(f"Deleted old products and images for user: {user.login}")
+
+    # except Exception as e:
+    #     session.rollback()  # Відміняємо зміни у випадку помилки
+    #     label.config(text="Сталася помилка при видаленні старих даних.")
+    #     print(f"Error deleting old data: {e}")
+    #     return
+
+
+
+    # try:
+    #     user_url = session.query(User).filter(User.account_url == user_input).first()
+    #     if user_url:
+    #         label.config(text=f"Start parsing data from: {user_input}")
+    #         # parsing_products_data(user_input)
+    #         print('done')
+    #     else:
+    #         label.config(text=f"User with url: {user_input} doesn't exist")
+    #         print('pezda')
+    #
+    # except Exception as e:
+    #     label.config(text="Сталася помилка під час парсингу.")
+    #     print(f"Error: {e}")
 
 
 tab1 = ttk.Frame(notebook)
 notebook.add(tab1, text="Parser")
 
-background_label = tk.Label(tab1, image=background_image)
+background_label = tk.Label(tab1)
 background_label.place(x=0, y=40, relwidth=1, relheight=1)
 
 label = tk.Label(tab1, text="Введіть URL:")
@@ -54,7 +78,6 @@ entry.pack(pady=10)
 
 button = tk.Button(tab1, text="Start-Parser", command=parsing_on_button_click)
 button.pack(pady=10)
-
 
 
 #Second Tab
@@ -149,11 +172,6 @@ del_user_input.pack(pady=10)
 
 button_del_user = tk.Button(tab3, text="Delete", command=delete_user)
 button_del_user.pack(pady=20)
-
-
-
-
-
 
 
 

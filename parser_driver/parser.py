@@ -97,6 +97,7 @@ def parsing_products_data(url):
     driver.get(url)
     time.sleep(3)
 
+
     try:
         close_modals(driver, '/html/body/div[4]/div/div/div/div[1]/div/div[3]/button')
         close_modals(driver, '//*[@id="onetrust-accept-btn-handler"]')
@@ -163,8 +164,6 @@ def parsing_products_data(url):
             if product_cat_elements:
                 product_cat_value = product_cat_elements[-1].text.strip()
 
-
-
             image_urls = []
             names_images_db = []
 
@@ -210,7 +209,6 @@ def parsing_products_data(url):
                     print(f"Downloaded image: {file_path}")
                     time.sleep(1)
 
-
                 close_button = driver.find_element(By.CLASS_NAME, "image-carousel__button--close")
                 close_button.click()
                 time.sleep(1)
@@ -222,6 +220,8 @@ def parsing_products_data(url):
             print(ex)
 
     driver.quit()
+
+
 
 
 
