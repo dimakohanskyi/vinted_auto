@@ -96,7 +96,8 @@ def parsing_products_data(url):
     driver.maximize_window()
     driver.get(url)
     time.sleep(3)
-
+    session = SessionLocal()
+    user = session.query(User).filter(User.account_url == url).first()
 
     try:
         close_modals(driver, '/html/body/div[4]/div/div/div/div[1]/div/div[3]/button')
@@ -216,11 +217,74 @@ def parsing_products_data(url):
             except Exception as es:
                 print("An error occurred:", es)
 
+            storing_data_db(
+                user_id=user.id,
+                title=product_title_value,
+                price=product_price,
+                company=product_company,
+                size=size_value,
+                condition=product_condition_value,
+                color=product_color_value,
+                location=product_location_values,
+                payment_method=product_payment_method_value,
+                description=product_desc_values,
+                category=product_cat_value,
+                unique_identifier=product_link,
+                image_paths=names_images_db
+            )
+
         except Exception as ex:
             print(ex)
 
     driver.quit()
 
+
+def storing_data_db(user_id, title, price, company, size, condition, color,
+                    location, payment_method, description, category, unique_identifier, image_paths):
+    session = SessionLocal()
+
+    try:
+        existing_product = session.query(Product).filter_by(unique_identifier=unique_identifier).first()
+
+        if existing_product:
+            print(f"Продукт з ідентифікатором {unique_identifier} вже існує в базі.")
+            return
+
+        new_product = Product(
+            user_id=user_id,
+            title=title,
+            price=price,
+            company=company,
+            size=size,
+            condition=condition,
+            color=color,
+            location=location,
+            payment_method=payment_method,
+            description=description,
+            category=category,
+            unique_identifier=unique_identifier
+        )
+
+        session.add(new_product)
+        session.commit()
+
+        if image_paths:
+            for image_path in image_paths:
+                new_image = ProductImage(
+                    product_id=new_product.id,  # Використовуємо ID новоствореного продукту
+                    image_path=image_path
+                )
+                session.add(new_image)  # Додаємо кожне зображення
+
+            session.commit()
+        print(f"Продукт '{title}' успішно збережений в базу даних разом з {len(image_paths)} зображеннями.")
+
+    except Exception as e:
+        session.rollback()  # Відкочуємо зміни у разі помилки
+        print(f"Помилка при збереженні продукту в базу даних: {e}")
+
+    finally:
+        session.close()  # Завжди закриваємо сесію
 
 
 

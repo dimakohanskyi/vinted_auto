@@ -4,7 +4,7 @@ from tkinter import messagebox
 from tkinter import ttk
 from models import User, SessionLocal, Product, ProductImage
 from tkinter import PhotoImage
-
+from helper import delete_user_products, ask_user_confirmation
 
 
 root = tk.Tk()
@@ -13,55 +13,64 @@ root.geometry("1200x600")
 notebook = ttk.Notebook(root)
 
 
+
+#TODO винести функцію в окремий потік, щоб не блокувався графічний інтерфейс і показувались логи (не пріорітeтно)
+#TODO зробити логи в першому табі (не пріорітeтно)
+
+
+
 #First Tab
 def parsing_on_button_click():
     session = SessionLocal()
     user_input = entry.get()
-    user = session.query(User).filter(User.account_url == user_input).first()
 
     if not user_input:
         messagebox.showwarning("Увага", "Будь ласка, введіть URL!")
         return
 
+    user = session.query(User).filter(User.account_url == user_input).first()
+
     if not user:
         label.config(text=f"User with URL: {user_input} doesn't exist")
         return
 
-    # try:
-        products_to_delete = session.query(Product).filter(Product.user_id == user.id).all()
+    try:
+        products_exist = session.query(Product).filter(Product.user_id == user.id).count() > 0
 
-        for product in products_to_delete:
-            print(product)
-        #     # Видаляємо всі зображення продукту
-        #     session.query(ProductImage).filter(ProductImage.product_id == product.id).delete()
-        #
-        #     # Тепер видаляємо самі продукти
-        #     session.query(Product).filter(Product.user_id == user.id).delete()
-        #
-        #     session.commit()  # Застосовуємо зміни в базі даних
-        #     print(f"Deleted old products and images for user: {user.login}")
+        if products_exist:
+            if delete_user_products(session, user):
+                confirm_import = ask_user_confirmation("Імпорт",
+                                                       "Продукти видалені. Ви бажаєте виконати імпорт нових даних?")
+                if confirm_import:
+                    start_import(user_input)
+            else:
+                label.config(text="Процес видалення було скасовано.")
+        else:
+            confirm_import = ask_user_confirmation("Імпорт",
+                                                   "У користувача немає продуктів. Бажаєте імпортувати нові?")
+            if confirm_import:
+                start_import(user_input)
+            else:
+                label.config(text="Імпорт даних було скасовано.")
 
-    # except Exception as e:
-    #     session.rollback()  # Відміняємо зміни у випадку помилки
-    #     label.config(text="Сталася помилка при видаленні старих даних.")
-    #     print(f"Error deleting old data: {e}")
-    #     return
+    except Exception as e:
+        session.rollback()
+        label.config(text="Сталася помилка при обробці.")
+        print(f"Error: {e}")
+
+    finally:
+        session.close()
 
 
+def start_import(user_input):
+    try:
+        label.config(text=f"Start parsing data from: {user_input}")
+        parsing_products_data(user_input)
+    except Exception as e:
+        label.config(text="Сталася помилка під час парсингу.")
+        print(f"Error during parsing: {e}")
 
-    # try:
-    #     user_url = session.query(User).filter(User.account_url == user_input).first()
-    #     if user_url:
-    #         label.config(text=f"Start parsing data from: {user_input}")
-    #         # parsing_products_data(user_input)
-    #         print('done')
-    #     else:
-    #         label.config(text=f"User with url: {user_input} doesn't exist")
-    #         print('pezda')
-    #
-    # except Exception as e:
-    #     label.config(text="Сталася помилка під час парсингу.")
-    #     print(f"Error: {e}")
+
 
 
 tab1 = ttk.Frame(notebook)
