@@ -9,7 +9,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 import os
-from models import Product, SessionLocal, User, ProductImage
+from db.models import Product, SessionLocal, User, ProductImage
+import shutil
 
 
 def download_image(url, file_path):
@@ -99,6 +100,16 @@ def parsing_products_data(url):
     session = SessionLocal()
     user = session.query(User).filter(User.account_url == url).first()
 
+    # Create folder structure based on user login
+    user_folder = os.path.join("images", "original", user.login)  # Assuming `user.login` is the user's login name
+
+    # Remove existing user folder if it exists
+    if os.path.exists(user_folder):
+        shutil.rmtree(user_folder)
+        print(f"Removed existing directory: {user_folder}")
+
+    os.makedirs(user_folder)
+
     try:
         close_modals(driver, '/html/body/div[4]/div/div/div/div[1]/div/div[3]/button')
         close_modals(driver, '//*[@id="onetrust-accept-btn-handler"]')
@@ -168,8 +179,7 @@ def parsing_products_data(url):
             image_urls = []
             names_images_db = []
 
-            product_directory = os.path.join("product_import",
-                                             product_title_value.replace(" ", "_") + product_price + size_value)
+            product_directory = os.path.join(user_folder, product_title_value.replace(" ", "_") + product_price + size_value)
 
             if not os.path.exists(product_directory):
                 os.mkdir(product_directory)
@@ -272,9 +282,9 @@ def storing_data_db(user_id, title, price, company, size, condition, color,
             for image_path in image_paths:
                 new_image = ProductImage(
                     product_id=new_product.id,  # Використовуємо ID новоствореного продукту
-                    image_path=image_path
+                    original_image_path=os.path.abspath(image_path)
                 )
-                session.add(new_image)  # Додаємо кожне зображення
+                session.add(new_image)
 
             session.commit()
         print(f"Продукт '{title}' успішно збережений в базу даних разом з {len(image_paths)} зображеннями.")
@@ -284,7 +294,7 @@ def storing_data_db(user_id, title, price, company, size, condition, color,
         print(f"Помилка при збереженні продукту в базу даних: {e}")
 
     finally:
-        session.close()  # Завжди закриваємо сесію
+        session.close()
 
 
 

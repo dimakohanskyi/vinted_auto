@@ -1,6 +1,6 @@
 # delete_products.py
 from tkinter import messagebox
-from models import Product, ProductImage
+from db.models import Product, ProductImage
 from tkinter import Toplevel, Button, Label
 
 

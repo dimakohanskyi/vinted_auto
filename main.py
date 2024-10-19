@@ -1,10 +1,11 @@
-from parser_driver.parser import download_image, parsing_products_data
+from parser_driver.parser import parsing_products_data
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
-from models import User, SessionLocal, Product, ProductImage
+from db.models import User, SessionLocal, Product, ProductImage
 from tkinter import PhotoImage
-from helper import delete_user_products, ask_user_confirmation
+from helpers.helper import delete_user_products, ask_user_confirmation
+from helpers.update_photos import process_images_folders
 
 
 root = tk.Tk()
@@ -19,7 +20,9 @@ notebook = ttk.Notebook(root)
 
 
 
-#First Tab
+#====================== First Tab ======================
+
+
 def parsing_on_button_click():
     session = SessionLocal()
     user_input = entry.get()
@@ -71,6 +74,33 @@ def start_import(user_input):
         print(f"Error during parsing: {e}")
 
 
+def update_photos():
+    user_input = entry.get()
+    session = SessionLocal()
+
+    if not user_input:
+        messagebox.showwarning("Увага", "Будь ласка, введіть URL користувача!")
+        return
+
+    user = session.query(User).filter(User.account_url == user_input).first()
+
+    if not user:
+        messagebox.showerror("Помилка", "Користувача не знайдено!")
+        return
+
+    print(f"Користувач знайдений: {user.login}")
+
+    # Виклик функції оновлення фотографій
+    try:
+        process_images_folders(user_login=user.login)  # Тут викликаємо вашу функцію обробки фото
+        messagebox.showinfo("Успіх", "Фотографії успішно оновлено!")
+    except Exception as e:
+        print(f"Помилка при оновленні фото: {e}")
+        messagebox.showerror("Помилка", f"Помилка при оновленні фото: {e}")
+    finally:
+        session.close()  # Закриваємо сесію з базою даних після завершення
+
+
 
 
 tab1 = ttk.Frame(notebook)
@@ -88,8 +118,12 @@ entry.pack(pady=10)
 button = tk.Button(tab1, text="Start-Parser", command=parsing_on_button_click)
 button.pack(pady=10)
 
+update_photos_button = tk.Button(tab1, text="Update Photos", command=update_photos)
+update_photos_button.pack(pady=10)
 
-#Second Tab
+
+
+#=========================  Second Tab ======================
 def add_new_user():
     user_login = login_user_input.get()
     user_password = password_user_input.get()
@@ -144,7 +178,7 @@ button_create_user.pack(pady=20)
 notebook.pack(expand=True, fill='both')
 
 
-#Third Tab
+#======================  Third Tab  ======================
 def delete_user():
     user_login = del_user_input.get()
 
@@ -181,8 +215,6 @@ del_user_input.pack(pady=10)
 
 button_del_user = tk.Button(tab3, text="Delete", command=delete_user)
 button_del_user.pack(pady=20)
-
-
 
 
 root.mainloop()

@@ -56,14 +56,15 @@ class ProductImage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey('products.id'), index=True)  # Foreign key to products table
-    image_path = Column(String, index=True)
+    original_image_path = Column(String, index=True)
+    fake_image_path = Column(String, index=True)
 
     product = relationship("Product", back_populates="images")
 
     def __repr__(self):
-        return f"<ProductImage(id={self.id}, product_id={self.product_id}, image_path={self.image_path})>"
+        return f"<ProductImage(id={self.id}, product_id={self.product_id}, image_path={self.original_image_path})>"
 
-# # #
+
 # Base.metadata.drop_all(bind=engine)
 # Base.metadata.create_all(engine)
 
