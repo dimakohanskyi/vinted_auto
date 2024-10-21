@@ -56,6 +56,7 @@ class ProductImage(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey('products.id'), index=True)  # Foreign key to products table
+    main_images_path = Column(String, index=True)
     original_image_path = Column(String, index=True)
     fake_image_path = Column(String, index=True)
 
