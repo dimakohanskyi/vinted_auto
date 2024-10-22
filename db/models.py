@@ -20,7 +20,7 @@ class User(Base):
     login = Column(String, index=True)
     password = Column(String, unique=True, index=True)
     account_url = Column(String, unique=True, index=True)
-
+    # proxy
     products = relationship("Product", back_populates="user")
 
     def __repr__(self):
