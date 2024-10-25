@@ -11,7 +11,7 @@ from selenium.webdriver.chrome.service import Service
 
 
 load_dotenv()
-profile_id = '474806975'
+# profile_id = '474806975'
 
 
 def dolphin_get_port(profile_id):
@@ -60,7 +60,17 @@ def dolphin_aut(profile_id):
         driver.quit()
 
 
-dolphin_aut(profile_id=profile_id)
+
+
+
+
+
+
+
+
+
+
+
 
 
 def random_scroll(driver, scroll_pause_time=2, scroll_amount=300):
