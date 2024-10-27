@@ -93,26 +93,71 @@ def dolphin_aut(profile_id):
     chrome_driver_path = '/Users/user/Desktop/projects/python_projects/vinted_aut/dolphin_anty/chromedriver'
     service = Service(chrome_driver_path)
 
+    user = session.query(User).filter(User.dolphin_anty_id == profile_id).first()
+
     driver = webdriver.Chrome(service=service, options=options)
 
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH,
+                                                                    '//*[@id="__next"]/div/div/div[1]/header/div/div/div[3]/div[2]/a[1]/span'))).click()
+    time.sleep(2)
+
     try:
-        main_profile_btn = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/div/div[1]/header/div/div/div[3]/div[2]/a[1]/span'))).click()
-        time.sleep(2)
-
         user_products = get_products_images(profile_id=profile_id)
+
         for user_product in user_products:
-            add_image_btn = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="photos"]/div[2]/div/div/div/div[5]/div/button'))).click()
-            time.sleep(1)
+            images = user_product.get('images', [])
+            fake_image_paths = [image['fake_image_path'] for image in images]
 
-            pyautogui.hotkey('command', 'f')
-            time.sleep(1)
-            pyautogui.write('zaebis')
+            for fake_image_el in fake_image_paths:
+                if fake_image_el:
+                    try:
 
+                        try:
 
+                            first_add_img_btn = WebDriverWait(driver, 10).until(
+                                EC.presence_of_element_located((
+                                    By.XPATH,
+                                    '//*[@id="photos"]/div[2]/div/div/div/div[5]/div/button'
+                                ))
+                            )
+                            first_add_img_btn.click()
 
+                        except Exception as ex:
+                            print("First add image button not found, checking for new button.")
 
+                            new_add_img_btn = WebDriverWait(driver, 10).until(
+                                EC.presence_of_element_located((
+                                    By.XPATH,
+                                    '//*[@id="photos"]/div[2]/div/div/div/div[2]/div[2]/div/button'
+                                ))
+                            )
+                            new_add_img_btn.click()
 
+                        pyautogui.press('enter')
+                        time.sleep(2)
+                        pyautogui.hotkey('command', 'shift', 'g')
+                        time.sleep(2)
 
+                        # Write the directory where the image is located
+                        pyautogui.write(os.path.dirname(fake_image_el))
+                        pyautogui.press('enter')
+                        time.sleep(2)
+                        image_name = os.path.basename(fake_image_el)
+
+                        if image_name:
+                            # Select the image file
+                            pyautogui.hotkey('command', 'shift', 'g')
+                            time.sleep(2)
+                            pyautogui.write(image_name)
+                            time.sleep(2)
+                            pyautogui.press('enter')
+                            time.sleep(2)
+                            pyautogui.press('enter')
+
+                        # Wait for the new add image button
+
+                    except Exception as upload_ex:
+                        print(f"Error while uploading image {fake_image_el}: {upload_ex}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -124,12 +169,67 @@ def dolphin_aut(profile_id):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 def random_scroll(driver, scroll_pause_time=2, scroll_amount=300):
     ...
 
 
 def random_timesleep():
     ...
+
+
+
+
+
+# {'id': 60,
+#  'title': 'Calvin Klein',
+#  'price': 'PLN 105.00',
+#  'company': 'CALVIN KLEIN',
+#  'size': '10',
+#  'condition': 'VERY GOOD',
+#  'color': 'WHITE',
+#  'location': 'WARSZAWA, POLAND',
+#  'payment_method': 'BANK CARD',
+#  'description': 'Super stan, zapraszam do zakupuWysyłam paczkę w ciągu 1 dnia',
+#  'category': ['Home', 'Women', 'Shoes', 'Sneakers', 'Calvin Klein Sneakers'],
+#  'images': [{'id': 355, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_379.jpg'},
+#             {'id': 357, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_834.jpg'},
+#             {'id': 358, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_349.jpg'},
+#             {'id': 356, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_133.jpg'},
+#             {'id': 359, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_804.jpg'}]}
+#
+
+
+
+
+
+
+
+
+# /Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/
+# Calvin Klein_10_PLN 105.00_379.jpg
+
+
+
+# /Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Nike_AirPLN 105.0011.5
+
+
+
+
+
+
 
 
 

@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 # Load environment variables
 load_dotenv()
@@ -20,7 +21,7 @@ class User(Base):
     login = Column(String, index=True)
     password = Column(String, unique=True, index=True)
     account_url = Column(String, unique=True, index=True)
-    # proxy
+    dolphin_anty_id = Column(Integer, index=True)
     products = relationship("Product", back_populates="user")
 
     def __repr__(self):
@@ -41,14 +42,16 @@ class Product(Base):
     location = Column(String, index=True)
     payment_method = Column(String, index=True)
     description = Column(String, index=True)
-    category = Column(String, index=True)
+    category = Column(JSONB, index=True)
     unique_identifier = Column(String, index=True)
 
     images = relationship("ProductImage", back_populates="product")
     user = relationship("User", back_populates="products")
 
     def __repr__(self):
-        return f"<Product(id={self.id}, title={self.title})>"
+        return (f"<Product(id={self.id}, title={self.title}, price={self.price}, company={self.company}),"
+                f"size={self.size}, condition={self.condition}, color={self.color}, location={self.location},"
+                f"payment_method={self.payment_method}, description={self.description}, category={self.category}>")
 
 
 class ProductImage(Base):
