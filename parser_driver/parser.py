@@ -11,6 +11,9 @@ from selenium.common.exceptions import StaleElementReferenceException, TimeoutEx
 import os
 from db.models import Product, SessionLocal, User, ProductImage
 import shutil
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.proxy import Proxy, ProxyType
+from selenium.webdriver.chrome.options import Options
 
 
 def download_image(url, file_path):
@@ -37,6 +40,17 @@ def close_modals(driver, xpath):
     except Exception as e:
         print("Failed to close modal:", e)
     time.sleep(1)
+
+
+def modal_choose_country(driver):
+    try:
+        wait = WebDriverWait(driver, 10)
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "domain-selection-link")))
+        poland_link = driver.find_element(By.XPATH, "//a[contains(@href, 'vinted.pl')]")
+        poland_link.click()
+    except Exception as ex:
+        print(f"Error with choose the country modal{ex}")
+
 
 
 def random_scroll(driver, pause_time=2, max_scrolls=50):
@@ -93,10 +107,18 @@ def generator_uniq_images_names(title, price, size):
 
 
 def parsing_products_data(url):
-    driver = webdriver.Chrome()
+    chrome_options = Options()
+    chrome_options.add_argument("--lang=pl")
+
+    driver = webdriver.Chrome(options=chrome_options)
     driver.maximize_window()
+
+    # Встановлюємо заголовок
+    driver.request_interceptor = lambda request: request.headers.update({'Accept-Language': 'pl-PL'})
+
     driver.get(url)
     time.sleep(3)
+
     session = SessionLocal()
     user = session.query(User).filter(User.account_url == url).first()
 
@@ -110,11 +132,9 @@ def parsing_products_data(url):
 
     os.makedirs(user_folder)
 
-    try:
-        close_modals(driver, '/html/body/div[4]/div/div/div/div[1]/div/div[3]/button')
-        close_modals(driver, '//*[@id="onetrust-accept-btn-handler"]')
-    except Exception as e:
-        print("No modals to close or failed to close modal:", e)
+    modal_choose_country(driver)
+    time.sleep(1)
+    close_modals(driver, '//*[@id="onetrust-accept-btn-handler"]')
 
     random_scroll(driver)
     product_links = collect_product_links(driver)
@@ -125,7 +145,7 @@ def parsing_products_data(url):
             driver.get(product_link)
             time.sleep(3)
 
-            dirt_product_price = driver.find_element(By.CSS_SELECTOR, '[data-testid="item-price"] p').text
+            dirt_product_price = driver.find_element(By.CSS_SELECTOR, '[data-testid="item-price"]').text
             product_price = dirt_product_price.replace('zł', '').strip()
 
             product_title = WebDriverWait(driver, 10).until(
@@ -156,6 +176,12 @@ def parsing_products_data(url):
                                                      'ul.breadcrumbs li.breadcrumbs__item span[itemprop="title"]')
             categories = [category.text for category in category_elements]
 
+            if categories and categories[0] == "Strona główna":
+                categories.pop(0)
+                print(f"updated {categories}")
+
+
+
             image_urls = []
             names_images_db = []
             downloaded_urls = set()  # Додано для унікальності
@@ -172,6 +198,7 @@ def parsing_products_data(url):
                 WebDriverWait(driver, 10).until(
                     EC.visibility_of_element_located((By.CLASS_NAME, "item-photos"))
                 )
+
                 thumbnails = driver.find_elements(By.CSS_SELECTOR, "div[data-testid='item-photo-1']")
 
                 for first_img_site in thumbnails:
@@ -225,20 +252,6 @@ def parsing_products_data(url):
         print(ex)
 
     driver.quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def storing_data_db(user_id, title, price, company, size, condition, color,

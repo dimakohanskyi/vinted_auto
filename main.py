@@ -14,11 +14,7 @@ root.geometry("1200x600")
 notebook = ttk.Notebook(root)
 
 
-
-
-#TODO problem with storing product and problem with find elements (title, desc)
 #====================== First Tab ======================
-
 
 def parsing_on_button_click():
     session = SessionLocal()

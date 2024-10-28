@@ -14,7 +14,6 @@ import pyautogui
 
 
 load_dotenv()
-# profile_id = '474806975'
 
 
 def dolphin_get_port(profile_id):
@@ -148,6 +147,54 @@ def upload_product_images(driver, fake_image_paths):
         return False
 
 
+def select_category_process(driver, product_cat_mas):
+    try:
+        # Wait for the dropdown to be present and click it
+        category_vinted_dropdown = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "c-input__content"))
+        )
+        category_vinted_dropdown.click()
+
+        # Loop through categories
+
+        while True:
+            # Wait for dropdown items to be present
+            dropdown_items = WebDriverWait(driver, 10).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "ul.web_ui__List__list li"))
+            )
+
+            found_category = False
+
+            for item in dropdown_items:
+                try:
+                    category_name = item.find_element(By.CLASS_NAME, "web_ui__Cell__title").text
+
+                    if category_name in product_cat_mas:
+                        print(f"Attempting to select category: {category_name}")
+                        item.click()
+                        random_timesleep()  # Random sleep after selection
+                        print(f"Категорія '{category_name}' була обрана.")
+                        found_category = True
+                        break  # Break the loop if a category was selected
+
+                except Exception as ex:
+                    print("Stale element reference encountered. Refetching items...")
+                    break  # Break to re-fetch dropdown items
+                except Exception as ex:
+                    print(f"Error encountered while processing category '{category_name}': {ex}")
+                    break  # Exit the for loop to refetch items
+
+            if found_category:
+                # If a category was found and selected, we need to refetch the items again
+                continue  # Loop back to fetch the items again to ensure we have the latest
+
+    except Exception as ex:
+        print("Timeout while waiting for elements.")
+
+    finally:
+        print("Exiting category selection process.")
+
+
 def dolphin_aut(profile_id):
     session = SessionLocal()
     port, ws_endpoint = dolphin_get_port(profile_id)
@@ -158,6 +205,7 @@ def dolphin_aut(profile_id):
 
     # Launch the browser with the WebSocket port
     options = webdriver.ChromeOptions()
+    options.add_argument('--lang=pl')
     options.add_argument(f'--remote-debugging-port={port}')
 
     chrome_driver_path = '/Users/user/Desktop/projects/python_projects/vinted_aut/dolphin_anty/chromedriver'
@@ -175,35 +223,17 @@ def dolphin_aut(profile_id):
         user_products = get_products_images(profile_id=profile_id)
 
         for user_product in user_products:
-            print(f"Title -- {user_product['title']}")
-            print('-' * 50)
 
             images = user_product.get('images', [])
             fake_image_paths = [image['fake_image_path'] for image in images]
+            # upload_product_images(driver, fake_image_paths)
 
             if not fake_image_paths:
                 print("No images to upload for this product.")
                 continue
 
-            # images_uploaded = upload_product_images(driver, fake_image_paths)
-
-            # if images_uploaded:
-            #     print(f"Product {user_product['id']} images uploaded successfully. Proceeding with other data.")
-            #
-
-            # try:
-            #     title_input = WebDriverWait(driver, 10).until(
-            #         EC.element_to_be_clickable((By.CSS_SELECTOR, ".web_ui__Input__value[name='title']"))
-            #     )
-            #
-            #     title_input.click()
-            #
-            #     random_scroll(driver=driver)
-            #
-            #     pyautogui.write(user_product['title'])
-            # except Exception as ex:
-            #     print(f"Error with adding data {ex}")
-
+            # product_cat_mas = user_product['category']
+            # select_category_process(driver, product_cat_mas)
 
     except Exception as e:
         print(f"An error occurred: {e}")
