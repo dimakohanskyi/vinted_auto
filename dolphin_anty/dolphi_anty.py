@@ -78,6 +78,76 @@ def get_products_images(profile_id):
     return products_info
 
 
+def upload_product_images(driver, fake_image_paths):
+    """
+      Завантажує зображення для конкретного продукту.
+      Повертає True, якщо всі зображення успішно завантажені, інакше False.
+    """
+
+    successful_uploads = 0
+
+    for fake_image_el in fake_image_paths:
+        if fake_image_el:
+            try:
+                try:
+                    first_add_img_btn = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((
+                            By.XPATH,
+                            '//*[@id="photos"]/div[2]/div/div/div/div[5]/div/button'
+                        ))
+                    )
+                    first_add_img_btn.click()
+
+                except Exception as ex:
+                    print("First add image button not found, checking for new button.")
+
+                    new_add_img_btn = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((
+                            By.XPATH,
+                            "//button[@aria-label='Add photos']"
+                        ))
+                    )
+                    new_add_img_btn.click()
+
+                # Додавання зображення через pyautogui
+                pyautogui.press('enter')
+                time.sleep(2)
+                pyautogui.hotkey('command', 'shift', 'g')
+                time.sleep(2)
+
+                # Вказуємо директорію, де знаходиться зображення
+                pyautogui.write(os.path.dirname(fake_image_el))
+                pyautogui.press('enter')
+                time.sleep(2)
+                image_name = os.path.basename(fake_image_el)
+
+                if image_name:
+                    # Вибір імені файлу зображення
+                    pyautogui.hotkey('command', 'shift', 'g')
+                    time.sleep(2)
+                    pyautogui.write(image_name)
+                    time.sleep(2)
+                    pyautogui.press('enter')
+                    time.sleep(2)
+                    pyautogui.press('enter')
+                    time.sleep(4)
+
+                # Збільшуємо лічильник успішних завантажень
+                successful_uploads += 1
+
+            except Exception as upload_ex:
+                print(f"Error while uploading image {fake_image_el}: {upload_ex}")
+                continue  # Пропускаємо поточне зображення та пробуємо наступне
+
+    # Перевірка, чи всі фото успішно завантажені
+    if successful_uploads == len(fake_image_paths):
+        print("All images for this product have been uploaded successfully.")
+        return True
+    else:
+        print("Some images were not uploaded successfully.")
+        return False
+
+
 def dolphin_aut(profile_id):
     session = SessionLocal()
     port, ws_endpoint = dolphin_get_port(profile_id)
@@ -105,59 +175,35 @@ def dolphin_aut(profile_id):
         user_products = get_products_images(profile_id=profile_id)
 
         for user_product in user_products:
+            print(f"Title -- {user_product['title']}")
+            print('-' * 50)
+
             images = user_product.get('images', [])
             fake_image_paths = [image['fake_image_path'] for image in images]
 
-            for fake_image_el in fake_image_paths:
-                if fake_image_el:
-                    try:
+            if not fake_image_paths:
+                print("No images to upload for this product.")
+                continue
 
-                        try:
+            # images_uploaded = upload_product_images(driver, fake_image_paths)
 
-                            first_add_img_btn = WebDriverWait(driver, 10).until(
-                                EC.presence_of_element_located((
-                                    By.XPATH,
-                                    '//*[@id="photos"]/div[2]/div/div/div/div[5]/div/button'
-                                ))
-                            )
-                            first_add_img_btn.click()
+            # if images_uploaded:
+            #     print(f"Product {user_product['id']} images uploaded successfully. Proceeding with other data.")
+            #
 
-                        except Exception as ex:
-                            print("First add image button not found, checking for new button.")
+            # try:
+            #     title_input = WebDriverWait(driver, 10).until(
+            #         EC.element_to_be_clickable((By.CSS_SELECTOR, ".web_ui__Input__value[name='title']"))
+            #     )
+            #
+            #     title_input.click()
+            #
+            #     random_scroll(driver=driver)
+            #
+            #     pyautogui.write(user_product['title'])
+            # except Exception as ex:
+            #     print(f"Error with adding data {ex}")
 
-                            new_add_img_btn = WebDriverWait(driver, 10).until(
-                                EC.presence_of_element_located((
-                                    By.XPATH,
-                                    '//*[@id="photos"]/div[2]/div/div/div/div[2]/div[2]/div/button'
-                                ))
-                            )
-                            new_add_img_btn.click()
-
-                        pyautogui.press('enter')
-                        time.sleep(2)
-                        pyautogui.hotkey('command', 'shift', 'g')
-                        time.sleep(2)
-
-                        # Write the directory where the image is located
-                        pyautogui.write(os.path.dirname(fake_image_el))
-                        pyautogui.press('enter')
-                        time.sleep(2)
-                        image_name = os.path.basename(fake_image_el)
-
-                        if image_name:
-                            # Select the image file
-                            pyautogui.hotkey('command', 'shift', 'g')
-                            time.sleep(2)
-                            pyautogui.write(image_name)
-                            time.sleep(2)
-                            pyautogui.press('enter')
-                            time.sleep(2)
-                            pyautogui.press('enter')
-
-                        # Wait for the new add image button
-
-                    except Exception as upload_ex:
-                        print(f"Error while uploading image {fake_image_el}: {upload_ex}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -166,33 +212,23 @@ def dolphin_aut(profile_id):
         driver.quit()
 
 
+def random_scroll(driver, min_pause=1, max_pause=5, min_scroll=100, max_scroll=500):
+    pause_time = random.uniform(min_pause, max_pause)
+    time.sleep(pause_time)
+    scroll_distance = random.randint(min_scroll, max_scroll)
+    driver.execute_script(f"window.scrollBy(0, {scroll_distance});")
+    print(f"Scrolled down {scroll_distance} pixels.")
+
+
+def random_timesleep(min_seconds=1, max_seconds=5):
+    sleep_time = random.uniform(min_seconds, max_seconds)
+    time.sleep(sleep_time)
+    print(f"Slept for {sleep_time:.2f} seconds.")
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-def random_scroll(driver, scroll_pause_time=2, scroll_amount=300):
-    ...
-
-
-def random_timesleep():
-    ...
-
-
-
-
-
+# user_product
 # {'id': 60,
 #  'title': 'Calvin Klein',
 #  'price': 'PLN 105.00',
@@ -204,6 +240,8 @@ def random_timesleep():
 #  'payment_method': 'BANK CARD',
 #  'description': 'Super stan, zapraszam do zakupuWysyłam paczkę w ciągu 1 dnia',
 #  'category': ['Home', 'Women', 'Shoes', 'Sneakers', 'Calvin Klein Sneakers'],
+
+
 #  'images': [{'id': 355, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_379.jpg'},
 #             {'id': 357, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_834.jpg'},
 #             {'id': 358, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_349.jpg'},
@@ -213,17 +251,6 @@ def random_timesleep():
 
 
 
-
-
-
-
-
-# /Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/
-# Calvin Klein_10_PLN 105.00_379.jpg
-
-
-
-# /Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Nike_AirPLN 105.0011.5
 
 
 
