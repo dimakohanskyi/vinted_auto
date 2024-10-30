@@ -11,6 +11,7 @@ from selenium.webdriver.chrome.service import Service
 from db.models import SessionLocal, User, ProductImage, Product
 import pprint
 import pyautogui
+from parser_driver.user_simulator import *
 
 
 load_dotenv()
@@ -242,8 +243,6 @@ def select_product_size_process(driver, product_size_mas):
 
 
 def select_product_condition_process(driver, product_condition_mas):
-    # TODO need updates and test
-    print(f"product_condition_mas --  {product_condition_mas}")
     try:
         condition_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "input#status_id"))
@@ -252,17 +251,15 @@ def select_product_condition_process(driver, product_condition_mas):
         random_timesleep()
 
         condition_dropdown_elements = WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".web_ui__Cell__cell.web_ui__Cell__default.web_ui__Cell__clickable"))
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR,
+                                                 ".web_ui__Cell__cell.web_ui__Cell__default.web_ui__Cell__clickable .web_ui__Cell__title"))
         )
 
         for condition_element in condition_dropdown_elements:
             condition_text = condition_element.text.strip().lower()
-            print(f"condition_text {condition_text}")
-
             if condition_text == product_condition_mas.strip().lower():
                 condition_element.click()
                 random_timesleep()
-                print(f"Selected condition: {condition_element.text}")
                 break
         else:
             print(f"Condition '{product_condition_mas}' not found in the dropdown.")
@@ -271,9 +268,112 @@ def select_product_condition_process(driver, product_condition_mas):
         print(f"Error with select condition: {ex}")
 
 
+def select_product_color_process(driver, product_color_mas):
+    try:
+
+        product_color_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR,
+                                            'input[data-testid="color-select-dropdown-input"].c-input__value.c-input__value--with-suffix.u-cursor-pointer'))
+        )
+
+        product_color_input.click()
+        random_timesleep()
+
+        color_list_items = WebDriverWait(driver, 10).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR,
+                                                 'ul.web_ui__List__list.web_ui__List__tight > li.web_ui__Item__item.web_ui__Item__with-divider'))
+        )
+
+        product_color_mas_clear = product_color_mas.strip().lower()
+        color_list_mas = product_color_mas_clear.split(',')
+        first_color = color_list_mas[0].strip()
+        second_color = color_list_mas[1].strip() if len(color_list_mas) > 1 else None
+        selected_colors = []
+
+        for color_item in color_list_items:
+            color_item_text = color_item.text.strip().lower()
+
+            for color in color_list_mas:
+                if color.strip() in color_item_text:
+                    color_item.click()
+                    selected_colors.append(color.strip())
+                    random_timesleep()
+                    break
+
+            # Якщо вже вибрано необхідну кількість кольорів, виходимо з зовнішнього циклу
+            if len(selected_colors) >= len(color_list_mas):
+                break
+
+    except Exception as ex:
+        print(f'Error with select color {ex}')
 
 
+def select_product_price_process(driver, product_price_mas):
+    try:
+        price_input = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, 'input.web_ui__Input__value#price'))
+        )
+        price_input.click()
+        random_timesleep()
 
+        pyautogui.write(product_price_mas)
+
+    except Exception as ex:
+        print(f"Error with select price {ex}")
+
+
+def select_package_size_process(driver):
+    try:
+        package_size_element = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[data-testid="medium-package-size--cell"]'))
+        )
+        package_size_element.click()
+
+    except Exception as ex:
+        print(f"Error selecting package size: {ex}")
+
+
+def fill_title_input_process(driver, product_title_mas):
+    try:
+        title_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-testid="title--input"]'))
+        )
+        title_input.click()
+        random_timesleep()
+
+        title_input.send_keys(product_title_mas.capitalize())
+
+    except Exception as ex:
+        print(f"Error filling title input: {ex}")
+
+
+def fill_description_input_process(driver, product_description_mas):
+    try:
+        description_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'textarea[data-testid="description--input"]'))
+        )
+
+        description_input.click()
+        random_timesleep()
+
+        description_input.clear()
+        description_input.send_keys(product_description_mas)
+
+    except Exception as ex:
+        print(f"Error filling description input: {ex}")
+
+
+def click_add_button_process(driver):
+    try:
+        add_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, 'button[data-testid="upload-form-save-button"]'))
+        )
+
+        add_button.click()
+        random_timesleep()
+
+    except Exception as ex:
+        print(f"Error clicking 'Dodaj' button: {ex}")
 
 
 def dolphin_aut(profile_id):
@@ -313,24 +413,52 @@ def dolphin_aut(profile_id):
 
             random_timesleep()
 
+            images = user_product.get('images', [])
+            fake_image_paths = [image['fake_image_path'] for image in images]
+
+            if fake_image_paths:
+                print("Uploading images...")
+                upload_success = upload_product_images(driver, fake_image_paths)
+                if upload_success:
+                    print(f"All images for product '{user_product['title']}' uploaded successfully.")
+                    uploaded_product_ids.add(user_product['id'])
+                else:
+                    print(f"Some images for product '{user_product['title']}' failed to upload.")
+            else:
+                print("No images to upload for this product.")
+
+            print(f"Finished processing product '{user_product['title']}'.")
+
+            product_title_mas = user_product['title']
+            fill_title_input_process(driver, product_title_mas)
+
+            product_description_mas = user_product['description']
+            fill_description_input_process(driver, product_description_mas)
+
+
             product_cat_mas = user_product['category']
             select_category_process(driver, product_cat_mas)
-            #
-            # marka_cat_mas = user_product['company']
-            # select_product_marka_process(driver, marka_cat_mas)
 
-            # product_size_mas = user_product['size']
-            # select_product_size_process(driver, product_size_mas)
+            marka_cat_mas = user_product['company']
+            select_product_marka_process(driver, marka_cat_mas)
+
+            product_size_mas = user_product['size']
+            select_product_size_process(driver, product_size_mas)
 
             product_condition_mas = user_product['condition']
             select_product_condition_process(driver, product_condition_mas)
 
+            product_color_mas = user_product['color']
+            select_product_color_process(driver, product_color_mas)
 
+            product_price_mas = user_product['price']
+            select_product_price_process(driver, product_price_mas)
 
+            select_package_size_process(driver)
 
             # images = user_product.get('images', [])
             # fake_image_paths = [image['fake_image_path'] for image in images]
-
+            #
             # if fake_image_paths:
             #     print("Uploading images...")
             #     upload_success = upload_product_images(driver, fake_image_paths)
@@ -350,42 +478,6 @@ def dolphin_aut(profile_id):
     finally:
         driver.quit()
 
-
-def random_scroll(driver, min_pause=1, max_pause=5, min_scroll=100, max_scroll=500):
-    pause_time = random.uniform(min_pause, max_pause)
-    time.sleep(pause_time)
-    scroll_distance = random.randint(min_scroll, max_scroll)
-    driver.execute_script(f"window.scrollBy(0, {scroll_distance});")
-    print(f"Scrolled down {scroll_distance} pixels.")
-
-
-def random_timesleep(min_seconds=1, max_seconds=5):
-    sleep_time = random.uniform(min_seconds, max_seconds)
-    time.sleep(sleep_time)
-
-
-
-
-# user_product
-# {'id': 60,
-#  'title': 'Calvin Klein',
-#  'price': 'PLN 105.00',
-#  'company': 'CALVIN KLEIN',
-#  'size': '10',
-#  'condition': 'VERY GOOD',
-#  'color': 'WHITE',
-#  'location': 'WARSZAWA, POLAND',
-#  'payment_method': 'BANK CARD',
-#  'description': 'Super stan, zapraszam do zakupuWysyłam paczkę w ciągu 1 dnia',
-#  'category': ['Home', 'Women', 'Shoes', 'Sneakers', 'Calvin Klein Sneakers'],
-
-
-#  'images': [{'id': 355, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_379.jpg'},
-#             {'id': 357, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_834.jpg'},
-#             {'id': 358, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_349.jpg'},
-#             {'id': 356, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_133.jpg'},
-#             {'id': 359, 'fake_image_path': '/Users/user/Desktop/projects/python_projects/vinted_aut/images/fake/profile_1/Calvin_KleinPLN 105.0010/Calvin Klein_10_PLN 105.00_804.jpg'}]}
-#
 
 
 
