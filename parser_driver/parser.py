@@ -46,11 +46,11 @@ def modal_choose_country(driver):
     try:
         wait = WebDriverWait(driver, 10)
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, "domain-selection-link")))
-        poland_link = driver.find_element(By.XPATH, "//a[contains(@href, 'vinted.pl')]")
+        # poland_link = driver.find_element(By.XPATH, "//a[contains(@href, 'vinted.pl')]")
+        poland_link = driver.find_element(By.XPATH, "/html/body/div[4]/div/div/div/div[3]/div[16]/div/div/a")
         poland_link.click()
     except Exception as ex:
         print(f"Error with choose the country modal{ex}")
-
 
 
 def random_scroll(driver, pause_time=2, max_scrolls=50):
@@ -180,9 +180,6 @@ def parsing_products_data(url):
                 categories.pop(0)
                 print(f"updated {categories}")
 
-
-
-            image_urls = []
             names_images_db = []
             downloaded_urls = set()  # Додано для унікальності
 
@@ -240,7 +237,8 @@ def parsing_products_data(url):
                         description=product_description,
                         category=categories,
                         unique_identifier=product_link,
-                        image_paths=names_images_db
+                        image_paths=names_images_db,
+
                     )
                 except Exception as ex:
                     print(ex)

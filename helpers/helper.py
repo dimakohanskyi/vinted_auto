@@ -2,6 +2,7 @@
 from tkinter import messagebox
 from db.models import Product, ProductImage
 from tkinter import Toplevel, Button, Label
+from db.models import SessionLocal
 
 
 def delete_user_products(session, user):
@@ -68,3 +69,9 @@ def ask_user_confirmation(title, message):
     confirmation_window.wait_window()  # Очікувати закриття вікна
 
     return result[0]  # Повертаємо результат
+
+
+
+
+
+

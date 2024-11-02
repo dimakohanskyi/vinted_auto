@@ -8,6 +8,7 @@ from helpers.helper import delete_user_products, ask_user_confirmation
 from helpers.update_photos import process_images_folders
 from dolphin_anty.dolphi_anty import dolphin_aut
 
+
 root = tk.Tk()
 root.title("Парсер Лисого")
 root.geometry("1200x600")
@@ -244,6 +245,109 @@ del_user_input.pack(pady=10)
 
 button_del_user = tk.Button(tab4, text="Delete", command=delete_user)
 button_del_user.pack(pady=20)
+
+
+#======================  Fouth Tab  ======================#
+
+def show_user_products():
+    user_login = user_login_input.get()
+
+    try:
+        session = SessionLocal()
+        user = session.query(User).filter(User.login == user_login).first()
+
+        if user:
+            user_id = user.id
+            user_products = session.query(Product).filter(Product.user_id == user_id).all()
+
+            # Clear the text widget before displaying new results
+            product_display.delete(1.0, tk.END)
+
+            if user_products:
+                for product in user_products:
+                    product_display.insert(tk.END, "\n")
+                    product_display.insert(tk.END, "\n")
+                    product_display.insert(tk.END, f"   Product ID: {product.id}\n")
+                    product_display.insert(tk.END, f"   Title: {product.title}\n")
+                    product_display.insert(tk.END, f"   Marka: {product.company}\n")
+                    product_display.insert(tk.END, f"   Price: {product.price}\n")
+                    product_display.insert(tk.END, f"   Size: {product.size}\n")
+                    product_display.insert(tk.END, f"   URL: {product.unique_identifier}\n")
+                    product_display.insert(tk.END, f"   Active: {product.is_active}\n")
+                    product_display.insert(tk.END, "\n")
+                    product_display.insert(tk.END, "\n")
+            else:
+                product_display.insert(tk.END, "No products found for this user.\n")
+        else:
+            messagebox.showwarning("Warning", f"No user found with the login: '{user_login}'")
+
+    except Exception as ex:
+        messagebox.showerror("Error", f"Failed to fetch products: {ex}")
+
+    finally:
+        session.close()
+
+# Create a new tab for displaying user products
+tab5 = ttk.Frame(notebook)
+notebook.add(tab5, text="Show User Products")
+
+label_user_login = tk.Label(tab5, text="Enter User Login")
+label_user_login.pack(pady=10)
+user_login_input = tk.Entry(tab5, width=40)
+user_login_input.pack(pady=10)
+
+button_show_products = tk.Button(tab5, text="Show Products", command=show_user_products)
+button_show_products.pack(pady=20)
+
+# Text widget to display the products
+product_display = tk.Text(tab5, wrap=tk.WORD, width=160, height=120)
+product_display.pack(pady=10)
+
+
+#======================  Fifth Tab  ======================#
+
+def activate_product():
+    product_id = product_id_input.get()
+
+    try:
+        session = SessionLocal()
+        product = session.query(Product).filter(Product.id == product_id).first()
+
+        if product:
+            if product.is_active:
+                messagebox.showinfo("Info", f"Product ID '{product_id}' is already active.")
+            else:
+                product.is_active = True
+                session.commit()
+                messagebox.showinfo("Success", f"Product ID '{product_id}' has been activated.")
+        else:
+            messagebox.showwarning("Warning", f"No product found with ID: '{product_id}'")
+
+    except Exception as ex:
+        session.rollback()
+        messagebox.showerror("Error", f"Failed to activate product: {ex}")
+
+    finally:
+        session.close()
+
+
+tab6 = ttk.Frame(notebook)
+notebook.add(tab6, text="Activate Product")
+
+label_product_id = tk.Label(tab6, text="Enter Product ID to Activate")
+label_product_id.pack(pady=10)
+
+product_id_input = tk.Entry(tab6, width=40)
+product_id_input.pack(pady=10)
+
+button_activate_product = tk.Button(tab6, text="Activate Product", command=activate_product)
+button_activate_product.pack(pady=20)
+
+
+
+
+
+
 
 
 root.mainloop()

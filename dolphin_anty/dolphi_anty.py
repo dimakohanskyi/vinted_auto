@@ -12,6 +12,8 @@ from db.models import SessionLocal, User, ProductImage, Product
 import pprint
 import pyautogui
 from parser_driver.user_simulator import *
+from selenium.webdriver.common.action_chains import ActionChains
+import pyperclip
 
 
 load_dotenv()
@@ -104,7 +106,6 @@ def upload_product_images(driver, fake_image_paths):
                     )
                     new_add_img_btn.click()
                     random_timesleep()
-                    random_scroll(driver=driver)
 
                 # Додавання зображення через pyautogui
                 pyautogui.press('enter')
@@ -112,18 +113,28 @@ def upload_product_images(driver, fake_image_paths):
                 pyautogui.hotkey('command', 'shift', 'g')
                 time.sleep(2)
 
-                # Вказуємо директорію, де знаходиться зображення
-                pyautogui.write(os.path.dirname(fake_image_el))
-                pyautogui.press('enter')
-                time.sleep(2)
+                # # Вказуємо директорію, де знаходиться зображення
+                # pyautogui.write(os.path.dirname(fake_image_el))
+                # pyautogui.press('enter')
+                # time.sleep(2)
                 image_name = os.path.basename(fake_image_el)
 
+                # Копіюємо директорію зображення в буфер обміну
+                image_directory = os.path.dirname(fake_image_el)
+                pyperclip.copy(image_directory)
+                pyautogui.hotkey('command', 'v')
+                time.sleep(1)
+                pyautogui.press('enter')
+                time.sleep(1)
+
                 if image_name:
+                    pyperclip.copy(image_name)
                     # Вибір імені файлу зображення
                     pyautogui.hotkey('command', 'shift', 'g')
-                    random_timesleep()
-                    pyautogui.write(image_name)
-                    random_timesleep()
+                    time.sleep(1)
+                    # pyautogui.write(image_name)
+                    pyautogui.hotkey('command', 'v')
+                    time.sleep(2)
                     pyautogui.press('enter')
                     time.sleep(2)
                     pyautogui.press('enter')
@@ -170,7 +181,6 @@ def select_category_process(driver, product_cat_mas):
                         item.click()
                         random_timesleep()  # Random sleep after selection
                         print(f"Категорія '{category_name}' була обрана.")
-
                         selected_categories.add(category_name)
                         break
 
@@ -178,6 +188,7 @@ def select_category_process(driver, product_cat_mas):
                     print("Stale element reference encountered. Refetching items...")
                     break  # Break to re-fetch dropdown items
 
+            random_timesleep()
     except Exception as ex:
         print("Timeout while waiting for elements.")
 
@@ -210,6 +221,8 @@ def select_product_marka_process(driver, marka_cat_mas):
                 return
 
         print(f'Brand {marka_cat_mas.title()} not found in the list.')
+        time.sleep(2)
+        print('марка обрана')
 
     except Exception as ex:
         print(f"Error with select marka: {ex}")
@@ -229,7 +242,6 @@ def select_product_size_process(driver, product_size_mas):
                 (By.CSS_SELECTOR, ".web_ui__Cell__cell.web_ui__Cell__default.web_ui__Cell__clickable"))
         )
         for size_element in size_dropdown_elements:
-            print(f"Available size: {size_element.text}")  # Вивести всі доступні розміри
             if size_element.text == product_size_mas:  # Порівняти з бажаним розміром
                 size_element.click()  # Клікнути на потрібний розмір
                 random_timesleep()
@@ -237,6 +249,12 @@ def select_product_size_process(driver, product_size_mas):
                 break
         else:
             print(f"Size '{product_size_mas}' not found in the dropdown.")
+
+        arrow_icon = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//*[@id='content']/div/div/div[7]/div[7]/div[1]/div[2]"))
+        )
+        arrow_icon.click()
+        time.sleep(2)
 
     except Exception as ex:
         print(f"Error with select size: {ex}")
@@ -263,6 +281,9 @@ def select_product_condition_process(driver, product_condition_mas):
                 break
         else:
             print(f"Condition '{product_condition_mas}' not found in the dropdown.")
+
+        time.sleep(2)
+        print('Стан вибрано')
 
     except Exception as ex:
         print(f"Error with select condition: {ex}")
@@ -304,6 +325,14 @@ def select_product_color_process(driver, product_color_mas):
             if len(selected_colors) >= len(color_list_mas):
                 break
 
+        close_dropdown_arrow = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH,
+                                        "//*[@id='content']/div/div/div[7]/div[15]/div/div[2]/span"))
+        )
+        close_dropdown_arrow.click()
+        time.sleep(2)
+        print('Колір обрано')
+
     except Exception as ex:
         print(f'Error with select color {ex}')
 
@@ -311,12 +340,13 @@ def select_product_color_process(driver, product_color_mas):
 def select_product_price_process(driver, product_price_mas):
     try:
         price_input = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, 'input.web_ui__Input__value#price'))
+            EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.web_ui__Input__content input[type="text"]#price'))
         )
         price_input.click()
         random_timesleep()
 
-        pyautogui.write(product_price_mas)
+        price_input.clear()
+        price_input.send_keys(product_price_mas)
 
     except Exception as ex:
         print(f"Error with select price {ex}")
@@ -376,6 +406,34 @@ def click_add_button_process(driver):
         print(f"Error clicking 'Dodaj' button: {ex}")
 
 
+def mark_uploaded_product(product_id):
+    session = SessionLocal()
+    try:
+        product = session.query(Product).get(product_id)
+        if product:
+            product.is_uploaded = True
+            session.commit()
+            print(f"Product {product_id} marked as uploaded.")
+        else:
+            print(f"Product with ID {product_id} not found.")
+    except Exception as ex:
+        print(f"Error updating product status: {ex}")
+    finally:
+        session.close()
+
+
+def reopen_add_product(driver):
+    try:
+        home = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR,
+                                                                               "//*[@id='__next']/div/div/div[1]/header/div/div/div[1]/a/div[2]")))
+
+        home.click()
+        random_timesleep()
+
+    except Exception as ex:
+        print(f"Error with open home page after adding, {ex}")
+
+
 def dolphin_aut(profile_id):
     session = SessionLocal()
     port, ws_endpoint = dolphin_get_port(profile_id)
@@ -393,21 +451,28 @@ def dolphin_aut(profile_id):
     service = Service(chrome_driver_path)
 
     user = session.query(User).filter(User.dolphin_anty_id == profile_id).first()
-
     driver = webdriver.Chrome(service=service, options=options)
 
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH,
-                                                                    '//*[@id="__next"]/div/div/div[1]/header/div/div/div[3]/div[2]/a[1]/span'))).click()
-    time.sleep(2)
-
     try:
-        user_products = get_products_images(profile_id=profile_id)
 
-        # Набір для відстеження завантажених продуктів
-        uploaded_product_ids = set()
+        add_product_btn = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH,
+                                                                        '//*[@id="__next"]/div/div/div[1]/header/div/div/div[3]/div[2]/a[1]/span')))
+        add_product_btn.click()
+        time.sleep(2)
+
+        user_products = get_products_images(profile_id=profile_id)
+        active_products_found = False
 
         for user_product in user_products:
-            if user_product['id'] in uploaded_product_ids:
+            product = session.query(Product).get(user_product['id'])
+
+            if not product.is_active:
+                print(f"Продукт '{user_product['title']}' не активний. Пропускаємо.")
+                continue
+
+            active_products_found = True
+
+            if product.is_uploaded:
                 print(f"Продукт '{user_product['title']}' вже був завантажений, пропускаємо.")
                 continue
 
@@ -421,64 +486,41 @@ def dolphin_aut(profile_id):
                 upload_success = upload_product_images(driver, fake_image_paths)
                 if upload_success:
                     print(f"All images for product '{user_product['title']}' uploaded successfully.")
-                    uploaded_product_ids.add(user_product['id'])
                 else:
                     print(f"Some images for product '{user_product['title']}' failed to upload.")
             else:
                 print("No images to upload for this product.")
+                continue
 
             print(f"Finished processing product '{user_product['title']}'.")
 
-            product_title_mas = user_product['title']
-            fill_title_input_process(driver, product_title_mas)
-
-            product_description_mas = user_product['description']
-            fill_description_input_process(driver, product_description_mas)
-
-
-            product_cat_mas = user_product['category']
-            select_category_process(driver, product_cat_mas)
-
-            marka_cat_mas = user_product['company']
-            select_product_marka_process(driver, marka_cat_mas)
-
-            product_size_mas = user_product['size']
-            select_product_size_process(driver, product_size_mas)
-
-            product_condition_mas = user_product['condition']
-            select_product_condition_process(driver, product_condition_mas)
-
-            product_color_mas = user_product['color']
-            select_product_color_process(driver, product_color_mas)
-
-            product_price_mas = user_product['price']
-            select_product_price_process(driver, product_price_mas)
-
+            fill_title_input_process(driver, user_product['title'])
+            fill_description_input_process(driver, user_product['description'])
+            select_category_process(driver, user_product['category'])
+            time.sleep(1)
+            select_product_marka_process(driver, user_product['company'])
+            time.sleep(1)
+            select_product_size_process(driver, user_product['size'])
+            time.sleep(1)
+            select_product_condition_process(driver, user_product['condition'])
+            time.sleep(1)
+            select_product_color_process(driver, user_product['color'])
+            time.sleep(1)
+            select_product_price_process(driver, user_product['price'])
+            time.sleep(1)
             select_package_size_process(driver)
+            time.sleep(1)
+            # click_add_button_process(driver)
 
-            # images = user_product.get('images', [])
-            # fake_image_paths = [image['fake_image_path'] for image in images]
-            #
-            # if fake_image_paths:
-            #     print("Uploading images...")
-            #     upload_success = upload_product_images(driver, fake_image_paths)
-            #     if upload_success:
-            #         print(f"All images for product '{user_product['title']}' uploaded successfully.")
-            #         uploaded_product_ids.add(user_product['id'])
-            #     else:
-            #         print(f"Some images for product '{user_product['title']}' failed to upload.")
-            # else:
-            #     print("No images to upload for this product.")
-            #
-            # print(f"Finished processing product '{user_product['title']}'.")
+            mark_uploaded_product(user_product['id'])
+            reopen_add_product(driver)
+            print(f"Product '{user_product['title']}' uploaded and marked as uploaded in the database.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
 
     finally:
         driver.quit()
-
-
 
 
 

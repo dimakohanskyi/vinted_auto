@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Boolean
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -44,6 +44,8 @@ class Product(Base):
     description = Column(String, index=True)
     category = Column(JSONB, index=True)
     unique_identifier = Column(String, index=True)
+    is_active = Column(Boolean, default=False)
+    is_uploaded = Column(Boolean, default=False)
 
     images = relationship("ProductImage", back_populates="product")
     user = relationship("User", back_populates="products")
@@ -69,6 +71,8 @@ class ProductImage(Base):
         return f"<ProductImage(id={self.id}, product_id={self.product_id}, image_path={self.original_image_path})>"
 
 
+
+#
 # Base.metadata.drop_all(bind=engine)
 # Base.metadata.create_all(engine)
 
