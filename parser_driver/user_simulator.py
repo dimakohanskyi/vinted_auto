@@ -2,7 +2,7 @@ import random
 import time
 
 
-def random_scroll(driver, min_pause=1, max_pause=5, min_scroll=100, max_scroll=500):
+def random_scroll(driver, min_pause=1, max_pause=5, min_scroll=100, max_scroll=250):
     pause_time = random.uniform(min_pause, max_pause)
     time.sleep(pause_time)
     scroll_distance = random.randint(min_scroll, max_scroll)
@@ -12,6 +12,16 @@ def random_scroll(driver, min_pause=1, max_pause=5, min_scroll=100, max_scroll=5
 def random_timesleep(min_seconds=1, max_seconds=5):
     sleep_time = random.uniform(min_seconds, max_seconds)
     time.sleep(sleep_time)
+
+
+def random_click():
+    ...
+
+def random_movement():
+    ...
+
+
+
 
 
 

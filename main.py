@@ -331,6 +331,30 @@ def activate_product():
         session.close()
 
 
+def deactivate_product():
+    product_id = product_id_input.get()
+
+    try:
+        session = SessionLocal()
+        product = session.query(Product).filter(Product.id == product_id).first()
+
+        if product:
+            if product.is_active:
+                product.is_active = False
+                session.commit()
+                messagebox.showinfo("Success", f"Product ID '{product_id}' has been deactivated.")
+        else:
+            messagebox.showwarning("Warning", f"No product found with ID: '{product_id}'")
+
+    except Exception as ex:
+        session.rollback()
+        messagebox.showerror("Error", f"Failed to activate product: {ex}")
+
+    finally:
+        session.close()
+
+
+
 tab6 = ttk.Frame(notebook)
 notebook.add(tab6, text="Activate Product")
 
@@ -342,6 +366,11 @@ product_id_input.pack(pady=10)
 
 button_activate_product = tk.Button(tab6, text="Activate Product", command=activate_product)
 button_activate_product.pack(pady=20)
+
+button_activate_product = tk.Button(tab6, text="Deactivate Product", command=deactivate_product)
+button_activate_product.pack(pady=20)
+
+
 
 
 

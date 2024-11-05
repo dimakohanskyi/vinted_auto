@@ -149,7 +149,7 @@ def parsing_products_data(url):
             product_price = dirt_product_price.replace('zł', '').strip()
 
             product_title = WebDriverWait(driver, 10).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[itemprop="name"] h2'))
+                EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.summary-max-lines-4 span.web_ui__Text__text'))
             ).text
 
             product_size = driver.find_element(By.CSS_SELECTOR,

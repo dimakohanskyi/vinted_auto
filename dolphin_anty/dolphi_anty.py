@@ -94,6 +94,7 @@ def upload_product_images(driver, fake_image_paths):
                         ))
                     )
                     first_add_img_btn.click()
+                    time.sleep(2)
 
                 except Exception as ex:
                     print("First add image button not found, checking for new button.")
@@ -107,19 +108,13 @@ def upload_product_images(driver, fake_image_paths):
                     new_add_img_btn.click()
                     random_timesleep()
 
-                # Додавання зображення через pyautogui
                 pyautogui.press('enter')
                 time.sleep(2)
                 pyautogui.hotkey('command', 'shift', 'g')
                 time.sleep(2)
 
-                # # Вказуємо директорію, де знаходиться зображення
-                # pyautogui.write(os.path.dirname(fake_image_el))
-                # pyautogui.press('enter')
-                # time.sleep(2)
                 image_name = os.path.basename(fake_image_el)
 
-                # Копіюємо директорію зображення в буфер обміну
                 image_directory = os.path.dirname(fake_image_el)
                 pyperclip.copy(image_directory)
                 pyautogui.hotkey('command', 'v')
@@ -129,10 +124,8 @@ def upload_product_images(driver, fake_image_paths):
 
                 if image_name:
                     pyperclip.copy(image_name)
-                    # Вибір імені файлу зображення
                     pyautogui.hotkey('command', 'shift', 'g')
                     time.sleep(1)
-                    # pyautogui.write(image_name)
                     pyautogui.hotkey('command', 'v')
                     time.sleep(2)
                     pyautogui.press('enter')
@@ -140,14 +133,12 @@ def upload_product_images(driver, fake_image_paths):
                     pyautogui.press('enter')
                     random_timesleep()
 
-                # Збільшуємо лічильник успішних завантажень
                 successful_uploads += 1
 
             except Exception as upload_ex:
                 print(f"Error while uploading image {fake_image_el}: {upload_ex}")
-                continue  # Пропускаємо поточне зображення та пробуємо наступне
+                continue
 
-    # Перевірка, чи всі фото успішно завантажені
     if successful_uploads == len(fake_image_paths):
         print("All images for this product have been uploaded successfully.")
         return True
@@ -231,7 +222,7 @@ def select_product_marka_process(driver, marka_cat_mas):
 def select_product_size_process(driver, product_size_mas):
     try:
         size_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "#size_id"))
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='size_id']"))
         )
 
         size_input.click()
@@ -294,7 +285,7 @@ def select_product_color_process(driver, product_color_mas):
 
         product_color_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR,
-                                            'input[data-testid="color-select-dropdown-input"].c-input__value.c-input__value--with-suffix.u-cursor-pointer'))
+                                            "input[data-testid='color-select-dropdown-input'].c-input__value.c-input__value--with-suffix.u-cursor-pointer"))
         )
 
         product_color_input.click()
@@ -302,7 +293,7 @@ def select_product_color_process(driver, product_color_mas):
 
         color_list_items = WebDriverWait(driver, 10).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR,
-                                                 'ul.web_ui__List__list.web_ui__List__tight > li.web_ui__Item__item.web_ui__Item__with-divider'))
+                                                 "ul.web_ui__List__list.web_ui__List__tight > li.web_ui__Item__item.web_ui__Item__with-divider"))
         )
 
         product_color_mas_clear = product_color_mas.strip().lower()
@@ -326,8 +317,8 @@ def select_product_color_process(driver, product_color_mas):
                 break
 
         close_dropdown_arrow = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH,
-                                        "//*[@id='content']/div/div/div[7]/div[15]/div/div[2]/span"))
+            EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                        "[data-testid='color-select-dropdown-chevron-up']"))
         )
         close_dropdown_arrow.click()
         time.sleep(2)
@@ -346,7 +337,8 @@ def select_product_price_process(driver, product_price_mas):
         random_timesleep()
 
         price_input.clear()
-        price_input.send_keys(product_price_mas)
+        pyautogui.write(product_price_mas)
+        # price_input.send_keys(product_price_mas)
 
     except Exception as ex:
         print(f"Error with select price {ex}")
@@ -371,7 +363,8 @@ def fill_title_input_process(driver, product_title_mas):
         title_input.click()
         random_timesleep()
 
-        title_input.send_keys(product_title_mas.capitalize())
+        # title_input.send_keys(product_title_mas.capitalize())
+        pyautogui.write(product_title_mas.capitalize())
 
     except Exception as ex:
         print(f"Error filling title input: {ex}")
@@ -380,14 +373,15 @@ def fill_title_input_process(driver, product_title_mas):
 def fill_description_input_process(driver, product_description_mas):
     try:
         description_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'textarea[data-testid="description--input"]'))
+            EC.presence_of_element_located((By.CSS_SELECTOR, "textarea[data-testid='description--input']"))
         )
 
         description_input.click()
         random_timesleep()
 
         description_input.clear()
-        description_input.send_keys(product_description_mas)
+        pyautogui.write(product_description_mas)
+        time.sleep(1)
 
     except Exception as ex:
         print(f"Error filling description input: {ex}")
@@ -453,6 +447,13 @@ def dolphin_aut(profile_id):
     user = session.query(User).filter(User.dolphin_anty_id == profile_id).first()
     driver = webdriver.Chrome(service=service, options=options)
 
+    time.sleep(2)
+    second_modal = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH,
+                                                                                   '//*[@id="onetrust-accept-btn-handler"]')))
+
+    if second_modal:
+        second_modal.click()
+
     try:
 
         add_product_btn = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH,
@@ -460,8 +461,12 @@ def dolphin_aut(profile_id):
         add_product_btn.click()
         time.sleep(2)
 
+        second_modal = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH,
+                                                                                       '//*[@id="onetrust-accept-btn-handler"]')))
+        if second_modal:
+            second_modal.click()
+
         user_products = get_products_images(profile_id=profile_id)
-        active_products_found = False
 
         for user_product in user_products:
             product = session.query(Product).get(user_product['id'])
@@ -469,8 +474,6 @@ def dolphin_aut(profile_id):
             if not product.is_active:
                 print(f"Продукт '{user_product['title']}' не активний. Пропускаємо.")
                 continue
-
-            active_products_found = True
 
             if product.is_uploaded:
                 print(f"Продукт '{user_product['title']}' вже був завантажений, пропускаємо.")
@@ -495,22 +498,38 @@ def dolphin_aut(profile_id):
             print(f"Finished processing product '{user_product['title']}'.")
 
             fill_title_input_process(driver, user_product['title'])
+            random_timesleep()
+            random_scroll(driver)
+
             fill_description_input_process(driver, user_product['description'])
+            random_scroll(driver)
+            random_timesleep()
+
             select_category_process(driver, user_product['category'])
-            time.sleep(1)
+            random_timesleep()
+
             select_product_marka_process(driver, user_product['company'])
-            time.sleep(1)
+            random_timesleep()
+
             select_product_size_process(driver, user_product['size'])
-            time.sleep(1)
+            random_timesleep()
+            random_scroll(driver)
+
             select_product_condition_process(driver, user_product['condition'])
-            time.sleep(1)
+            random_timesleep()
+
             select_product_color_process(driver, user_product['color'])
-            time.sleep(1)
+            random_timesleep()
+            random_scroll(driver)
+
             select_product_price_process(driver, user_product['price'])
-            time.sleep(1)
+            random_timesleep()
+            random_scroll(driver)
+
             select_package_size_process(driver)
-            time.sleep(1)
-            # click_add_button_process(driver)
+            random_timesleep()
+
+            click_add_button_process(driver)
 
             mark_uploaded_product(user_product['id'])
             reopen_add_product(driver)
