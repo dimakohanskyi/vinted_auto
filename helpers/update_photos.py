@@ -1,6 +1,7 @@
 import os
 from db.models import SessionLocal, User, ProductImage, Product
 from PIL import Image, ImageEnhance
+import shutil
 
 
 def photos_changer(img_path, save_path):
@@ -39,6 +40,19 @@ def change_color_balance(img):
     return Image.merge('RGB', (r, g, b))
 
 
+def clear_fake_images_folder(user_login):
+    fake_directory = os.path.join('images', 'fake', user_login)
+
+    if os.path.exists(fake_directory):
+        try:
+            shutil.rmtree(fake_directory)
+            print(f"Фейкова папка зображень для користувача {user_login} очищена.")
+        except Exception as e:
+            print(f"Помилка при очищенні папки {fake_directory}: {e}")
+    else:
+        print(f"Папка {fake_directory} не існує, створювати не потрібно.")
+
+
 def process_images_folders(user_login):
     session = SessionLocal()
 
@@ -48,6 +62,7 @@ def process_images_folders(user_login):
             print(f"Користувача з логіном {user_login} не знайдено.")
             return
 
+        clear_fake_images_folder(user_login)
         product_images = session.query(ProductImage).join(ProductImage.product).filter(Product.user_id == user.id).all()
 
         if not product_images:

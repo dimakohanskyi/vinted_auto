@@ -354,7 +354,6 @@ def deactivate_product():
         session.close()
 
 
-
 tab6 = ttk.Frame(notebook)
 notebook.add(tab6, text="Activate Product")
 
