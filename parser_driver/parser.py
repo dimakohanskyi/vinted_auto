@@ -43,7 +43,7 @@ def modal_choose_country(driver):
         wait = WebDriverWait(driver, 10)
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, "domain-selection-link")))
         # poland_link = driver.find_element(By.XPATH, "//a[contains(@href, 'vinted.pl')]")
-        poland_link = driver.find_element(By.XPATH, "/html/body/div[4]/div/div/div/div[3]/div[16]/div/div/a")
+        poland_link = driver.find_element(By.XPATH, "//a[contains(@class, 'domain-selection-link') and contains(., 'Polska')]")
         poland_link.click()
     except Exception as ex:
         print(f"Error with choose the country modal{ex}")

@@ -25,6 +25,7 @@ def dolphin_get_port(profile_id):
             port = start_info['automation']['port']
             ws_endpoint = start_info['automation']['wsEndpoint']
             return port, ws_endpoint
+
         else:
             print("Не вдалося запустити профіль:", start_info)
     else:
@@ -98,7 +99,7 @@ def upload_product_images(driver, fake_image_paths):
                     new_add_img_btn = WebDriverWait(driver, 10).until(
                         EC.presence_of_element_located((
                             By.XPATH,
-                            "//button[@aria-label='Add photos']"
+                            "//button[@aria-label='Dodaj zdjęcia']"
                         ))
                     )
                     new_add_img_btn.click()
@@ -458,14 +459,19 @@ def dolphin_aut(profile_id):
     # Launch the browser with the WebSocket port
     options = webdriver.ChromeOptions()
     options.add_argument('--lang=pl')
+
     options.add_argument(f'--remote-debugging-port={port}')
 
     chrome_driver_path = '/Users/user/Desktop/projects/python_projects/vinted_aut/dolphin_anty/chromedriver'
     service = Service(chrome_driver_path)
 
     user = session.query(User).filter(User.dolphin_anty_id == profile_id).first()
+
     driver = webdriver.Chrome(service=service, options=options)
     driver.maximize_window()
+
+    all_windows = driver.window_handles
+    driver.switch_to.window(all_windows[-1])
 
     question_modal_close(driver)
     time.sleep(2)

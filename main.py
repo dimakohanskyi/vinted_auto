@@ -86,7 +86,7 @@ def update_photos():
 
     # Виклик функції оновлення фотографій
     try:
-        process_images_folders(user_login=user.login)  # Тут викликаємо вашу функцію обробки фото
+        process_images_folders(user_login=user.login)
         messagebox.showinfo("Успіх", "Фотографії успішно оновлено!")
     except Exception as e:
         print(f"Помилка при оновленні фото: {e}")

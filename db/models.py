@@ -71,10 +71,8 @@ class ProductImage(Base):
         return f"<ProductImage(id={self.id}, product_id={self.product_id}, image_path={self.original_image_path})>"
 
 
-
-#
-Base.metadata.drop_all(bind=engine)
-Base.metadata.create_all(engine)
+# Base.metadata.drop_all(bind=engine)
+# Base.metadata.create_all(engine)
 
 
 
